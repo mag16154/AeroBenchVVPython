@@ -13,39 +13,36 @@ from CtrlLimits import CtrlLimits
 from LowLevelController import LowLevelController
 from Autopilot import FixedSpeedAutopilot
 from controlledF16 import controlledF16
-import random
 
 from plot import plot2d
 
-
-def generateTrajs(self):
-
-    # Initial Conditions ###
-
-    setpoint = 2220
-    p_gain = 0.01
-    power = 0  # Power
-    alt = 20000  # Initial Attitude
-    # Vt = 1000  # Initial Speed
-    Vt = random.randint(1000, 1020)
-    phi = 0  # (pi/2)*0.5           # Roll angle from wings level (rad)
-    theta = 0  # (-pi/2)*0.8        # Pitch angle from nose level (rad)
-    psi = 0  # -pi/4                # Yaw angle from North (rad)
+def main():
+    'main function'
 
     ctrlLimits = CtrlLimits()
     flightLimits = FlightLimits()
     llc = LowLevelController(ctrlLimits)
 
+    setpoint = 2220
+    p_gain = 0.01
+
     ap = FixedSpeedAutopilot(setpoint, p_gain, llc.xequil, llc.uequil, flightLimits, ctrlLimits)
 
     pass_fail = AirspeedPFA(60, setpoint, 5)
 
-    # Default alpha & beta
-    alpha_deg = round(random.uniform(2.0, 2.15), 4)
-    alpha = deg2rad(alpha_deg) # Trim Angle of Attack (rad)
-    beta = round(random.uniform(-0.06, 0.06), 4)              # Side slip angle (rad)
+    ### Initial Conditions ###
+    power = 0 # Power
 
-    print(Vt, alpha_deg, alpha, beta)
+    # Default alpha & beta
+    alpha = deg2rad(2.1215) # Trim Angle of Attack (rad)
+    beta = 0                # Side slip angle (rad)
+
+    alt = 20000 # Initial Attitude
+    Vt = 1000 # Initial Speed
+    phi = 0 #(pi/2)*0.5           # Roll angle from wings level (rad)
+    theta = 0 #(-pi/2)*0.8        # Pitch angle from nose level (rad)
+    psi = 0 #-pi/4                # Yaw angle from North (rad)
+
     # Build Initial Condition Vectors
     # state = [VT, alpha, beta, phi, theta, psi, P, Q, R, pn, pe, h, pow]
     initialState = [Vt, alpha, beta, phi, theta, psi, 0, 0, 0, 0, 0, alt, power]
@@ -53,7 +50,7 @@ def generateTrajs(self):
     # Select Desired F-16 Plant
     f16_plant = 'morelli' # 'stevens' or 'morelli'
 
-    tMax = 100 # simulation time
+    tMax = 70 # simulation time
 
     def der_func(t, y):
         'derivative function'
@@ -62,8 +59,8 @@ def generateTrajs(self):
 
         rv = np.zeros((y.shape[0],))
 
-        rv[0] = der[0]  # speed
-        rv[12] = der[12]  # power lag term
+        rv[0] = der[0] # speed
+        rv[12] = der[12] # power lag term
 
         return rv
 
@@ -72,10 +69,11 @@ def generateTrajs(self):
 
     print("Simulation Conditions Passed: {}".format(passed))
     print(len(states))
-    if passed is True:
-        return states
-    else:
-        None
+
     # plot
-    # filename = None # engine_e.png
-    # plot2d(filename, times, [(states, [(0, 'Vt'), (12, 'Pow')]), (u_list, [(0, 'Throttle')])])
+    filename = None # engine_e.png
+    plot2d(filename, times, [(states, [(0, 'Vt'), (12, 'Pow')]), (u_list, [(0, 'Throttle')])])
+
+
+if __name__ == '__main__':
+    main()
